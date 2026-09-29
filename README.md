@@ -5,6 +5,8 @@ Converts each page of the PDF into a video slide, synthesizes the narration
 with [VoxCPM 2](https://github.com/OpenBMB/VoxCPM), and assembles the result
 with FFmpeg (transitions, pauses, audio included).
 
+A complete working example is in the [example](example) folder, including the resulting output video. 
+
 ## Requirements
 
 - Python `>=3.10,<3.13`
@@ -57,7 +59,7 @@ to try:
 
 ```powershell
 deck2vid build --pdf example/slides.pdf --script example/script.yaml `
-  --output output.mp4 --device auto --resolution 1080p
+  --output example/output.mp4 --device auto --resolution 1080p
 ```
 
 ### Available commands

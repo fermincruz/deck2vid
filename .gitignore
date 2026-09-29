@@ -8,8 +8,5 @@ venv/
 .cache/
 .pytest_cache/
 
-*.mp4
-*.png
-
 build/
 dist/
