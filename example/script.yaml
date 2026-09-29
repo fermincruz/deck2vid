@@ -1,0 +1,33 @@
+config:
+  voice:
+    prompt_wav_path: voice.wav
+    prompt_text: "Hi! I am a sample synthetic voice used in deck2vid. You can create your own synthetic voices using descriptions, or clone your own voice."
+    reference_wav_path: voice.wav
+    denoise: true
+  defaults:
+    pre_pause: 0.3
+    post_pause: 0.7
+    transition: fade
+    transition_duration: 0.5
+    split_paragraphs: true
+    paragraph_pause: 0.4
+    inference_timesteps: 10
+
+slides:
+  - slide: 1
+    text: >
+      Welcome to deck2vid: a tool that turns slides and a text script into a
+      narrated video, ready to share.
+  - slide: 2
+    text: >
+      From a PDF and a YAML script, deck2vid synthesizes the narration with
+      VoxCPM and assembles the final video with FFmpeg, adding pauses and
+      transitions between slides.
+
+      The voice can be cloned from a reference audio, or generated from a
+      simple description, just like this very sample.
+  - slide: 3
+    text: >
+      To generate your own video, you only need to prepare your PDF and your
+      script, and run the build command.
+
