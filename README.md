@@ -11,7 +11,10 @@ A complete working example is in the [example](example) folder, including the re
 
 - Python `>=3.10,<3.13`
 - [FFmpeg](https://ffmpeg.org/download.html) installed and available on the
-  `PATH`
+  `PATH`. Quick install:
+  - Windows (winget): `winget install --id Gyan.FFmpeg`
+  - macOS (Homebrew): `brew install ffmpeg`
+  - Linux (apt, Debian/Ubuntu): `sudo apt install ffmpeg`
 - Optional: NVIDIA GPU with CUDA drivers (speeds up voice synthesis a lot;
   it also works without a GPU, just slower)
 
