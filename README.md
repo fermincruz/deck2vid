@@ -5,6 +5,11 @@ Converts each page of the PDF into a video slide, synthesizes the narration
 with [VoxCPM 2](https://github.com/OpenBMB/VoxCPM), and assembles the result
 with FFmpeg (transitions, pauses, audio included).
 
+VoxCPM lets you clone your own voice from just a few seconds of reference
+audio, without any training or fine-tuning. Once a voice is cloned, it can
+narrate text in other languages too, so a single reference sample is enough
+to voice a whole video regardless of the language of the script.
+
 A complete working example is in the [example](example) folder, including the resulting output video. 
 
 ## Requirements
