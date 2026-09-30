@@ -50,11 +50,8 @@ class VoiceSynthesizer:
             "denoise": self.voice.denoise,
             "inference_timesteps": inference_timesteps,
         }
-        if self.verbose:
-            wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
-        else:
-            with suppress_model_output():
-                wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
+        # model loading noise is hidden separately in _get_model; the inference progress bar stays visible here
+        wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
         sf.write(destination, wav, model.tts_model.sample_rate)
         return destination, False
 
@@ -101,9 +98,5 @@ class VoiceSynthesizer:
         instance = cls(VoiceConfig(description=description), Path("."), device, verbose=verbose)
         model = instance._get_model()
         full_text = f"({description}){text}"
-        if verbose:
-            wav = model.generate(text=full_text, inference_timesteps=inference_timesteps)
-        else:
-            with suppress_model_output():
-                wav = model.generate(text=full_text, inference_timesteps=inference_timesteps)
+        wav = model.generate(text=full_text, inference_timesteps=inference_timesteps)
         return wav, model.tts_model.sample_rate

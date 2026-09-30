@@ -108,7 +108,7 @@ deck2vid generate-voice `
 | `--device` | `auto`, `cuda`, or `cpu` for voice synthesis. |
 | `--inference-timesteps` | Inference steps of the VoxCPM model, `10`–`30` (default `10`). |
 | `--overwrite` | Overwrites the output WAV if it already exists. |
-| `--verbose` | Shows VoxCPM's own model loading/generation logs (hidden by default). |
+| `--verbose` | Shows VoxCPM's own model loading logs (hidden by default; the inference progress bar is always shown). |
 
 **`build`** — synthesizes the narration for each slide, renders the video
 clips, and assembles the final MP4:
@@ -130,7 +130,7 @@ deck2vid build --pdf example/slides.pdf --script example/script.yaml `
 | `--cache-dir` | Folder where intermediate images, clips, and audio are stored. |
 | `--overwrite` | Overwrites the output MP4 if it already exists. |
 | `--keep-temp` | Keeps the intermediate PNG images and MP4 clips. |
-| `--verbose` | Shows VoxCPM's own model loading/generation logs (hidden by default). |
+| `--verbose` | Shows VoxCPM's own model loading logs (hidden by default; the inference progress bar is always shown). |
 
 Audio paths in the script (`prompt_wav_path`, `reference_wav_path`) are
 resolved relative to the folder containing the YAML. Synthesized WAV files
