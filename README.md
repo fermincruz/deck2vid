@@ -59,7 +59,7 @@ to try:
 
 ```powershell
 deck2vid build --pdf example/slides.pdf --script example/script.yaml `
-  --output example/output.mp4 --device auto --resolution 1080p
+  --output example/output.mp4 --device auto --resolution 1080p --overwrite
 ```
 
 ### Available commands
