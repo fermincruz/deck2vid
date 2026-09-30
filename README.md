@@ -10,6 +10,11 @@ audio, without any training or fine-tuning. Once a voice is cloned, it can
 narrate text in other languages too, so a single reference sample is enough
 to voice a whole video regardless of the language of the script.
 
+For voice cloning, it is recommended recording approximately 30 seconds of
+narrated audio. The tone and prosody you use in this recording will be
+imitated when generating your video narration, so record it in the style you
+want the videos to have.
+
 A complete working example is in the [example](example) folder, including the resulting output video. 
 
 ## Requirements
