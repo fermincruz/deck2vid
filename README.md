@@ -90,6 +90,15 @@ deck2vid generate-voice `
   --output voice.wav --device auto
 ```
 
+| Option | Description |
+| --- | --- |
+| `--description` | Voice description, e.g. `"a young woman, gentle and sweet voice"`. |
+| `--text` | Text to read aloud in the generated sample. |
+| `--output` | Where to save the resulting WAV. |
+| `--device` | `auto`, `cuda`, or `cpu` for voice synthesis. |
+| `--inference-timesteps` | Inference steps of the VoxCPM model, `10`–`30` (default `10`). |
+| `--overwrite` | Overwrites the output WAV if it already exists. |
+
 **`build`** — synthesizes the narration for each slide, renders the video
 clips, and assembles the final MP4:
 
