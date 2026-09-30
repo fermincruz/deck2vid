@@ -8,7 +8,7 @@ import numpy as np
 import soundfile as sf
 
 from .models import VoiceConfig
-from .utils import cache_key
+from .utils import cache_key, suppress_model_output
 
 
 class VoiceSynthesizer:
@@ -17,10 +17,11 @@ class VoiceSynthesizer:
     _model = None
     _lock = Lock()
 
-    def __init__(self, voice: VoiceConfig, cache_dir: Path, device: str = "auto") -> None:
+    def __init__(self, voice: VoiceConfig, cache_dir: Path, device: str = "auto", verbose: bool = False) -> None:
         self.voice = voice
         self.cache_dir = cache_dir
         self.device = device
+        self.verbose = verbose
 
     def synthesize(self, text: str, output_dir: Path, split_paragraphs: bool = False, paragraph_pause: float = 0.3, inference_timesteps: int = 10) -> tuple[Path, bool]:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -49,7 +50,11 @@ class VoiceSynthesizer:
             "denoise": self.voice.denoise,
             "inference_timesteps": inference_timesteps,
         }
-        wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
+        if self.verbose:
+            wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
+        else:
+            with suppress_model_output():
+                wav = model.generate(**{key: value for key, value in kwargs.items() if value is not None})
         sf.write(destination, wav, model.tts_model.sample_rate)
         return destination, False
 
@@ -73,23 +78,32 @@ class VoiceSynthesizer:
         if self.__class__._model is None:
             with self.__class__._lock:
                 if self.__class__._model is None:
-                    from voxcpm import VoxCPM
-
-                    selected_device = self.device
-                    if selected_device == "auto":
-                        import torch
-
-                        selected_device = "cuda" if torch.cuda.is_available() else "cpu"
-                    kwargs = {"device": selected_device}
-                    self.__class__._model = VoxCPM.from_pretrained(
-                        "openbmb/VoxCPM2", load_denoiser=False, **kwargs
-                    )
+                    if self.verbose:
+                        self.__class__._model = self._load_model()
+                    else:
+                        with suppress_model_output():
+                            self.__class__._model = self._load_model()
         return self.__class__._model
 
+    def _load_model(self):
+        from voxcpm import VoxCPM
+
+        selected_device = self.device
+        if selected_device == "auto":
+            import torch
+
+            selected_device = "cuda" if torch.cuda.is_available() else "cpu"
+        return VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False, device=selected_device)
+
     @classmethod
-    def generate_sample(cls, description: str, text: str, device: str = "auto", inference_timesteps: int = 10) -> tuple[np.ndarray, int]:
+    def generate_sample(cls, description: str, text: str, device: str = "auto", inference_timesteps: int = 10, verbose: bool = False) -> tuple[np.ndarray, int]:
         """Generate a one-off WAV sample from a voice description, without caching."""
-        instance = cls(VoiceConfig(description=description), Path("."), device)
+        instance = cls(VoiceConfig(description=description), Path("."), device, verbose=verbose)
         model = instance._get_model()
-        wav = model.generate(text=f"({description}){text}", inference_timesteps=inference_timesteps)
+        full_text = f"({description}){text}"
+        if verbose:
+            wav = model.generate(text=full_text, inference_timesteps=inference_timesteps)
+        else:
+            with suppress_model_output():
+                wav = model.generate(text=full_text, inference_timesteps=inference_timesteps)
         return wav, model.tts_model.sample_rate

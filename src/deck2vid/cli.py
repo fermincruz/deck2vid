@@ -82,6 +82,7 @@ def generate_voice(
     device: str = typer.Option("auto"),
     inference_timesteps: int = typer.Option(10, min=10, max=30),
     overwrite: bool = typer.Option(False),
+    verbose: bool = typer.Option(False, help="Show the model's own loading/generation logs instead of hiding them"),
 ) -> None:
     """Generate a one-off WAV from a voice description, to reuse as a clone reference.
 
@@ -95,7 +96,7 @@ def generate_voice(
     if output.exists() and not overwrite:
         raise typer.BadParameter(f"output already exists: {output}; use --overwrite")
     console.print(f"[cyan]Generating voice sample...[/cyan] {description!r}")
-    wav, samplerate = VoiceSynthesizer.generate_sample(description, text, device, inference_timesteps)
+    wav, samplerate = VoiceSynthesizer.generate_sample(description, text, device, inference_timesteps, verbose)
     output.parent.mkdir(parents=True, exist_ok=True)
     sf.write(output, wav, samplerate)
     console.print(f"[green]Created:[/green] {output}")
@@ -106,7 +107,7 @@ def generate_voice(
 
 
 @app.command()
-def build(pdf: Path = typer.Option(...), script: Path = typer.Option(...), output: Path = typer.Option(...), resolution: str = typer.Option("1080p"), fps: int = typer.Option(30, min=1), cache_dir: Path = typer.Option(Path(".cache/deck2vid")), device: str = typer.Option("auto"), keep_temp: bool = typer.Option(False), overwrite: bool = typer.Option(False)) -> None:
+def build(pdf: Path = typer.Option(...), script: Path = typer.Option(...), output: Path = typer.Option(...), resolution: str = typer.Option("1080p"), fps: int = typer.Option(30, min=1), cache_dir: Path = typer.Option(Path(".cache/deck2vid")), device: str = typer.Option("auto"), keep_temp: bool = typer.Option(False), overwrite: bool = typer.Option(False), verbose: bool = typer.Option(False, help="Show the model's own loading/generation logs instead of hiding them")) -> None:
     """Synthesize narration, render clips, and assemble the final MP4."""
     if resolution not in RESOLUTIONS:
         raise typer.BadParameter(f"resolution must be one of: {', '.join(RESOLUTIONS)}")
@@ -119,7 +120,7 @@ def build(pdf: Path = typer.Option(...), script: Path = typer.Option(...), outpu
     work_dir = cache_dir / "work"
     audio_dir = cache_dir / "audio"
     images = render_pages(pdf, work_dir / "images")
-    synthesizer = VoiceSynthesizer(loaded.config.voice, audio_dir, device)
+    synthesizer = VoiceSynthesizer(loaded.config.voice, audio_dir, device, verbose)
     clips: list[Path] = []
     durations: list[float] = []
     for slide in loaded.slides:

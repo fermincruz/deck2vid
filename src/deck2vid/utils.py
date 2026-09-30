@@ -1,7 +1,12 @@
 """Small filesystem, dependency, and cache helpers."""
 
+import contextlib
 import hashlib
+import io
+import logging
+import os
 import shutil
+import sys
 import wave
 from pathlib import Path
 
@@ -16,6 +21,63 @@ def require_ffmpeg() -> str:
     if executable is None:
         raise RuntimeError("ffmpeg was not found on PATH")
     return executable
+
+
+_NOISY_LOGGERS = ("transformers", "huggingface_hub", "urllib3", "torch")
+
+
+@contextlib.contextmanager
+def suppress_model_output():
+    """Hide the model/library noise (loading logs, progress bars, warnings) printed by VoxCPM and its dependencies."""
+    env_overrides = {
+        "HF_HUB_DISABLE_PROGRESS_BARS": "1",
+        "TRANSFORMERS_VERBOSITY": "error",
+        "TOKENIZERS_PARALLELISM": "false",
+    }
+    previous_env = {key: os.environ.get(key) for key in env_overrides}
+    previous_levels = {name: logging.getLogger(name).level for name in _NOISY_LOGGERS}
+    os.environ.update(env_overrides)
+    for name in _NOISY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.ERROR)
+    try:
+        with _redirect_fds_to_devnull():
+            yield
+    finally:
+        for key, value in previous_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        for name, level in previous_levels.items():
+            logging.getLogger(name).setLevel(level)
+
+
+@contextlib.contextmanager
+def _redirect_fds_to_devnull():
+    """Redirect the OS-level stdout/stderr file descriptors, catching output from native libraries too."""
+    try:
+        stdout_fd, stderr_fd = sys.stdout.fileno(), sys.stderr.fileno()
+    except (AttributeError, OSError, io.UnsupportedOperation):
+        # no real file descriptors available (e.g. captured streams); fall back to Python-level redirection
+        with contextlib.redirect_stdout(open(os.devnull, "w")), contextlib.redirect_stderr(open(os.devnull, "w")):
+            yield
+        return
+    saved_stdout_fd, saved_stderr_fd = os.dup(stdout_fd), os.dup(stderr_fd)
+    devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.dup2(devnull_fd, stdout_fd)
+        os.dup2(devnull_fd, stderr_fd)
+        yield
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.dup2(saved_stdout_fd, stdout_fd)
+        os.dup2(saved_stderr_fd, stderr_fd)
+        os.close(devnull_fd)
+        os.close(saved_stdout_fd)
+        os.close(saved_stderr_fd)
 
 
 def validate_wav(path: Path, label: str) -> None:
