@@ -22,6 +22,8 @@ A complete working example is in the [example](example) folder, including the re
   - Linux (apt, Debian/Ubuntu): `sudo apt install ffmpeg`
 - Optional: NVIDIA GPU with CUDA drivers (speeds up voice synthesis a lot;
   it also works without a GPU, just slower)
+- ~5 GB of free disk space for the VoxCPM model, downloaded automatically on
+  first run and cached locally (usually under `~/.cache/huggingface`)
 
 ## Installation
 
