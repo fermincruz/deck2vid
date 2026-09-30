@@ -2,11 +2,9 @@
 
 import contextlib
 import hashlib
-import io
 import logging
 import os
 import shutil
-import sys
 import wave
 from pathlib import Path
 
@@ -28,7 +26,13 @@ _NOISY_LOGGERS = ("transformers", "huggingface_hub", "urllib3", "torch")
 
 @contextlib.contextmanager
 def suppress_model_output():
-    """Hide the model/library noise (loading logs, progress bars, warnings) printed by VoxCPM and its dependencies."""
+    """Hide the model/library noise (loading logs, progress bars, warnings) printed by VoxCPM and its dependencies.
+
+    Only redirects Python-level stdout/stderr (not OS file descriptors): dup2-ing
+    the real file descriptors was found to crash native CUDA/torch code on
+    Windows after the first generation, so this trades off catching some
+    native prints for not killing the process.
+    """
     env_overrides = {
         "HF_HUB_DISABLE_PROGRESS_BARS": "1",
         "TRANSFORMERS_VERBOSITY": "error",
@@ -40,8 +44,9 @@ def suppress_model_output():
     for name in _NOISY_LOGGERS:
         logging.getLogger(name).setLevel(logging.ERROR)
     try:
-        with _redirect_fds_to_devnull():
-            yield
+        with open(os.devnull, "w", encoding="utf-8") as devnull:
+            with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+                yield
     finally:
         for key, value in previous_env.items():
             if value is None:
@@ -50,34 +55,6 @@ def suppress_model_output():
                 os.environ[key] = value
         for name, level in previous_levels.items():
             logging.getLogger(name).setLevel(level)
-
-
-@contextlib.contextmanager
-def _redirect_fds_to_devnull():
-    """Redirect the OS-level stdout/stderr file descriptors, catching output from native libraries too."""
-    try:
-        stdout_fd, stderr_fd = sys.stdout.fileno(), sys.stderr.fileno()
-    except (AttributeError, OSError, io.UnsupportedOperation):
-        # no real file descriptors available (e.g. captured streams); fall back to Python-level redirection
-        with contextlib.redirect_stdout(open(os.devnull, "w")), contextlib.redirect_stderr(open(os.devnull, "w")):
-            yield
-        return
-    saved_stdout_fd, saved_stderr_fd = os.dup(stdout_fd), os.dup(stderr_fd)
-    devnull_fd = os.open(os.devnull, os.O_WRONLY)
-    try:
-        sys.stdout.flush()
-        sys.stderr.flush()
-        os.dup2(devnull_fd, stdout_fd)
-        os.dup2(devnull_fd, stderr_fd)
-        yield
-    finally:
-        sys.stdout.flush()
-        sys.stderr.flush()
-        os.dup2(saved_stdout_fd, stdout_fd)
-        os.dup2(saved_stderr_fd, stderr_fd)
-        os.close(devnull_fd)
-        os.close(saved_stdout_fd)
-        os.close(saved_stderr_fd)
 
 
 def validate_wav(path: Path, label: str) -> None:
